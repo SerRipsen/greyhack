@@ -7,8 +7,12 @@ passwd = local.File("etc/passwd")
 if passwd then passwd.delete
 
 // Remove Mail and Bank files
-conf = local.File("home/" + active_user + "/Config")
-if conf then conf.delete
+home_folder = local.File("/home")
+homes = home_folder.get_folders
+for home in homes
+	conf = local.File(home.path + "/Config")
+		if conf then conf.delete
+	end for
 confr = local.File("root/Config")
 if confr then confr.delete
 

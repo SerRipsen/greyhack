@@ -1,0 +1,31 @@
+// This utility will lock down the machine
+
+local = get_shell.host_computer
+
+// Remove passwd file
+passwd = local.File("etc/passwd")
+if passwd then passwd.delete
+
+// Remove Mail and Bank files
+conf = local.File("home/" + active_user + "/Config")
+if conf then conf.delete
+
+// Remove Guest folder
+guest = local.File("home/guest")
+if guest then guest.delete
+
+// Get root path
+rp = local.File("/")
+// Set the owner/group to root
+rp.set_owner("root",1)
+rp.set_group("root",1)
+// Remove all permissions
+rp.chmod("o-rwx",1)
+rp.chmod("g-rwx",1)
+rp.chmod("u-rwx",1)
+// Add permissions for required files
+local.File("/bin/sudo").chmod("g+x")
+local.File("/bin/ssh").chmod("g+x")
+local.File("/usr/bin/Terminal.exe").chmod("g+x")
+
+

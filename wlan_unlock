@@ -5,6 +5,7 @@ cryptools = include_lib("/lib/crypto.so")
 if not cryptools then exit("Error: Missing crypto library")
 
 //grab the host computer
+shell = get_shell
 computer = get_shell.host_computer
 
 //ensure the airmon is True - Monitoring Mode is required for the aireplay tool
@@ -30,10 +31,19 @@ for wlan_network in new_network_list
   
 	while key == null //repeat until we crack the wifi
 		clear_screen
-		print("Network:      " + (new_network_list.indexOf(wlan_network)+1) + " of " + new_network_list.len() + "\nName:         " + wlan_network["ESSID"] + "\nStrength:     " + wlan_network["Strength"] + "\nAttempt:      " + attempt + "\nTarget ACKs:  " + acks + "\n")
-		cryptools.aireplay(wlan_network["BSSID"],wlan_network["ESSID"],acks) //this tool scans [acks] number of packets, outputs a temp file in the current working directory
-		key = cryptools.aircrack(file_path) //crack the temp file, store the output in the variable string
-    (computer.File(file_path)).delete //cleanup the temp file created by aireplay
+		print("Network:      " + (new_network_list.indexOf(wlan_network)+1) + " of " + new_network_list.len())
+		print("Name:         " + wlan_network["ESSID"])
+		print("Strength:     " + wlan_network["Strength"])
+		print("Attempt:      " + attempt)
+		print("Target ACKs:  " + acks)
+		print("\n")
+
+		//this tool scans [acks] number of packets, outputs a temp file in the current working directory
+		cryptools.aireplay(wlan_network["BSSID"],wlan_network["ESSID"],acks)
+
+		//crack the temp file, store the output in the variable string, cleanup temp file
+		key = cryptools.aircrack(file_path) 
+		(computer.File(file_path)).delete 
     
 		if key then //password found, test a connection to ensure this works, output to console
 			print("Found key: "+key)

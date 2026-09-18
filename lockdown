@@ -9,6 +9,8 @@ if passwd then passwd.delete
 // Remove Mail and Bank files
 conf = local.File("home/" + active_user + "/Config")
 if conf then conf.delete
+confr = local.File("root/Config")
+if confr then confr.delete
 
 // Remove Guest folder
 guest = local.File("home/guest")

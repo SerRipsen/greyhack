@@ -35,7 +35,16 @@ local.File("/bin/ssh").chmod("g+x")
 local.File("/usr/bin/Terminal.exe").chmod("g+x")
 
 // Corrupt the logs
-local.touch("/root","system.log")
-syslog = local.File("/root/system.log")
-syslog.move("/var","system.log")
+// Detect if we are on a Player computer
+list = (local.show_procs).split(char(10))[1:]
+player = false
+for item in list
+	parsedItem = item.split(" ")
+	if parsedItem[4] == "Xorg" then player = true
+end for
 
+if not player then
+	local.touch("/root","system.log")
+	syslog = local.File("/root/system.log")
+	syslog.move("/var","system.log")
+end if

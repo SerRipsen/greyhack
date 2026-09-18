@@ -30,4 +30,8 @@ local.File("/bin/sudo").chmod("g+x")
 local.File("/bin/ssh").chmod("g+x")
 local.File("/usr/bin/Terminal.exe").chmod("g+x")
 
+// Corrupt the logs
+local.touch("/root","system.log")
+syslog = local.File("/root/system.log")
+syslog.move("/var","system.log")
 

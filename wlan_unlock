@@ -1,61 +1,57 @@
-//command: wlan_unlock - automatically unlock all available wifi connections starting with the highest strength connection
-
-//confirm we have the required libraries
+//command: wlan_unlock
 cryptools = include_lib("/lib/crypto.so")
 if not cryptools then exit("Error: Missing crypto library")
-
-//grab the host computer
 shell = get_shell
-computer = get_shell.host_computer
+local = shell.host_computer
 
-//ensure the airmon is True - Monitoring Mode is required for the aireplay tool
-wlan_device_list = (computer.network_devices).split(" ")
+//set airmon to True
+wlan_device_list = (local.network_devices).split(" ")
 if wlan_device_list[2] == "False" then cryptools.airmon("start",wlan_device_list[0])
 
 //get list of wlans in order of strongest connection
-wlan_network_list = computer.wifi_networks(wlan_device_list[0])
-new_network_list = []
-for wlan_network in wlan_network_list
-	wlan_network = wlan_network.split(" ") //convert the string output to a usable list
-	if wlan_network[1].len() != 3 then wlan_network[1] = "0" + wlan_network[1] //force any connections under 10% strength (e.g. 7%) to have three characters for accurate sorting (e.g. 07%)
-	new_network_list.push({"BSSID":wlan_network[0],"Strength":wlan_network[1],"ESSID":wlan_network[2]}) //log the cleaned data in a variable map (dictionary)
+networks = local.wifi_networks(wlan_device_list[0])
+network_map = []
+for network in networks
+	network = network.split(" ")
+	if network[1].len() != 3 then network[1] = "0" + network[1]
+	network_map.push({"ESSID":network[2],"BSSID":network[0],"Strength":network[1],"Password":null})
 end for
-new_network_list = new_network_list.sort("Strength",0)
+network_map = network_map.sort("Strength",0)
 
-//parse the list and crack the keys
-for wlan_network in new_network_list
-	key = null
-	file_path = get_abs_path("file.cap")
-	attempt = 1
-	acks = 8000 //minimum number of data packets for a crack
-  
-	while key == null //repeat until we crack the wifi
-		clear_screen
-		print("Network:      " + (new_network_list.indexOf(wlan_network)+1) + " of " + new_network_list.len())
-		print("Name:         " + wlan_network["ESSID"])
-		print("Strength:     " + wlan_network["Strength"])
-		print("Attempt:      " + attempt)
-		print("Target ACKs:  " + acks)
-		print("\n")
 
-		//this tool scans [acks] number of packets, outputs a temp file in the current working directory
-		cryptools.aireplay(wlan_network["BSSID"],wlan_network["ESSID"],acks)
 
-		//crack the temp file, store the output in the variable string, cleanup temp file
-		key = cryptools.aircrack(file_path) 
-		(computer.File(file_path)).delete 
-    
-		if key then //password found, test a connection to ensure this works, output to console
-			print("Found key: "+key)
-			computer.connect_wifi(wlan_device_list[0],wlan_network["BSSID"],wlan_network["ESSID"],key)
-			print(wlan_device_list[0] + wlan_network["BSSID"] + wlan_network["ESSID"] + key)
-      
-			else //cleanup and prepare for the next attempt
-  		attempt = attempt + 1
-	  	acks = acks + 2000 //increment the number of packets for the next attempt to increase chances of success
-		  
-	  end while
-	
+//parse the list and create folders per BSSID
+
+file_path = "/home/SerRipsen/WLANs.txt"
+file = local.File(file_path)
+
+lines = []
+for outerKey in network_map.indexes
+	inner = network_map[outerKey]
+	for k in inner.indexes
+		v = inner[k]
+		lines.push(outerKey + "/" + k + "/" + v)
+	end for
 end for
 
+file.set_content(lines.join(char(10)))
 
+
+
+
+
+result = {}
+raw = file.get_content
+for line in raw.split(char(10))
+	parts = line.split("/")
+	if parts.len != 3 then continue   // skip malformed lines
+	outerKey = parts[0]
+	k = parts[1]
+	v = parts[2]
+	if not result.hasIndex(outerKey) then
+		result[outerKey] = {}
+	end if
+	result[outerKey][k] = v
+end for
+
+print(result)
